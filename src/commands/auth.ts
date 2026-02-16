@@ -2,7 +2,19 @@ import { Command } from "commander";
 import { readConfig, writeConfig } from "../lib/config.js";
 
 export const authCommand = new Command("auth")
-	.description("Manage authentication");
+	.description("Manage authentication")
+	.addHelpText(
+		"after",
+		`
+Examples:
+  wahlu auth login wahlu_live_abc123...    Save your API key
+  wahlu auth status                        Check authentication
+  wahlu auth logout                        Remove saved key
+
+Generate an API key at wahlu.com under Settings > API Keys.
+You can also set WAHLU_API_KEY as an environment variable.
+Config is stored at ~/.config/wahlu/config.json.`,
+	);
 
 authCommand
 	.command("login")

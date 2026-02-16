@@ -18,7 +18,24 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 export const mediaCommand = new Command("media")
-	.description("Manage media files");
+	.description("Manage media files")
+	.addHelpText(
+		"after",
+		`
+Examples:
+  wahlu media list                         List all media files
+  wahlu media upload ./photo.jpg           Upload an image
+  wahlu media upload ./video.mp4 --json    Upload a video, get JSON with media ID
+  wahlu media delete abc123                Delete a media file
+
+Supported formats: .png, .jpg, .jpeg, .gif, .webp, .mp4, .mov, .webm
+
+Workflow:
+  1. Upload media:   wahlu media upload ./photo.jpg
+  2. Note the media ID from the output
+  3. Use it in a post: wahlu post create --name "Photo post" \\
+       --instagram '{"description":"Nice!","post_type":"grid_post","media_ids":["<media-id>"]}'`,
+	);
 
 mediaCommand
 	.command("list")

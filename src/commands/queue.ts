@@ -5,7 +5,18 @@ import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
 export const queueCommand = new Command("queue")
-	.description("Manage publishing queues");
+	.description("Manage publishing queues")
+	.addHelpText(
+		"after",
+		`
+Examples:
+  wahlu queue list                         List all queues
+  wahlu queue list --json                  List as JSON
+  wahlu queue add <queue-id> <post-id>     Add a post to a queue
+
+Queues define recurring time slots. Posts added to a queue are
+published automatically at the next available slot.`,
+	);
 
 queueCommand
 	.command("list")

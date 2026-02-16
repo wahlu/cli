@@ -4,7 +4,19 @@ import { getApiKey, getApiUrl, readConfig, writeConfig } from "../lib/config.js"
 import { output } from "../lib/output.js";
 
 export const brandCommand = new Command("brand")
-	.description("Manage brands");
+	.description("Manage brands")
+	.addHelpText(
+		"after",
+		`
+Examples:
+  wahlu brand list                         List all brands
+  wahlu brand list --json                  List as JSON
+  wahlu brand get abc123                   Get full brand details
+  wahlu brand switch abc123                Set as default brand
+
+Setting a default brand avoids needing --brand on every command.
+You can also set WAHLU_BRAND_ID as an environment variable.`,
+	);
 
 brandCommand
 	.command("list")

@@ -5,7 +5,18 @@ import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
 export const labelCommand = new Command("label")
-	.description("Manage labels");
+	.description("Manage labels")
+	.addHelpText(
+		"after",
+		`
+Examples:
+  wahlu label list                         List all labels
+  wahlu label create "Urgent"              Create a label
+  wahlu label create "Promo" --color "#ff5500"  Create with colour
+  wahlu label delete abc123                Delete a label
+
+Labels can be attached to posts via: wahlu post create --labels <id1> <id2>`,
+	);
 
 labelCommand
 	.command("list")

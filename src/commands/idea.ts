@@ -5,7 +5,18 @@ import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
 export const ideaCommand = new Command("idea")
-	.description("Manage content ideas");
+	.description("Manage content ideas")
+	.addHelpText(
+		"after",
+		`
+Examples:
+  wahlu idea list                                      List all ideas
+  wahlu idea create "Blog about summer trends"         Save an idea
+  wahlu idea create "Product launch" \\
+    --description "Announce the new feature" \\
+    --type "campaign"                                  Save with details
+  wahlu idea delete abc123                             Delete an idea`,
+	);
 
 ideaCommand
 	.command("list")

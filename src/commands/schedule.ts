@@ -5,7 +5,23 @@ import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
 export const scheduleCommand = new Command("schedule")
-	.description("Manage scheduled posts");
+	.description("Manage scheduled posts")
+	.addHelpText(
+		"after",
+		`
+Examples:
+  wahlu schedule list                      List all scheduled posts
+  wahlu schedule list --json               List as JSON
+  wahlu schedule create <post-id> \\
+    --at 2026-03-15T14:00:00Z \\
+    --integrations int-1 int-2             Schedule a post
+  wahlu schedule delete <scheduled-id>     Remove from schedule
+
+Workflow:
+  1. Create a post:         wahlu post create --name "My post" ...
+  2. Find integration IDs:  wahlu integration list
+  3. Schedule it:           wahlu schedule create <post-id> --at <datetime> --integrations <id>`,
+	);
 
 scheduleCommand
 	.command("list")
