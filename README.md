@@ -293,7 +293,7 @@ Upload images and videos to your media library.
 | `content_type` | string | MIME type (e.g. `image/jpeg`) |
 | `size` | number | File size in bytes |
 | `duration` | number\|null | Duration in seconds (video only) |
-| `status` | string | `available` \| `processing` \| `completed` \| `failed` |
+| `status` | string | `ready_for_processing` \| `processing` \| `completed` \| `failed` |
 | `download_url` | string\|null | Signed download URL |
 | `thumbnail_large_url` | string\|null | Large thumbnail |
 | `thumbnail_small_url` | string\|null | Small thumbnail |

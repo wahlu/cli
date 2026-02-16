@@ -60,7 +60,7 @@ Response fields:
   content_type        string       MIME type (e.g. "image/jpeg", "video/mp4")
   size                number       File size in bytes
   duration            number|null  Duration in seconds (video/audio only)
-  status              string       Processing status: "available" | "processing" | "completed" | "failed"
+  status              string       Processing status: "ready_for_processing" | "processing" | "completed" | "failed"
   workflow_status     string|null  Normalised lifecycle status
   label_ids           string[]     Attached label IDs
   folder_id           string|null  Folder ID
@@ -121,7 +121,7 @@ Uploads a local file to your brand's media library. The upload is a 3-step
 process handled automatically:
   1. Request a signed upload URL from the API
   2. Upload the file bytes to the signed URL
-  3. Mark the media as available for processing
+  3. Mark the media as ready for processing
 
 After upload, Wahlu processes the media (generates thumbnails, etc.).
 Use 'wahlu media list' to check when status changes to "completed".
@@ -173,7 +173,7 @@ Examples:
 		}
 
 		await client.patch(`/brands/${brandId}/media/${id}`, {
-			status: "available",
+			status: "ready_for_processing",
 		});
 
 		if (opts.json) {
