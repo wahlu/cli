@@ -1,0 +1,45 @@
+{
+  "name": "@wahlu/cli",
+  "version": "0.1.0",
+  "description": "Wahlu CLI — manage your social media from the terminal",
+  "type": "module",
+  "bin": {
+    "wahlu": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wahlu/cli.git"
+  },
+  "homepage": "https://wahlu.com",
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "lint": "biome check . --diagnostic-level=error",
+    "format": "biome check . --write --diagnostic-level=error"
+  },
+  "keywords": [
+    "wahlu",
+    "social-media",
+    "cli",
+    "scheduling",
+    "instagram",
+    "tiktok",
+    "facebook",
+    "youtube",
+    "linkedin"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.15.3",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2"
+  }
+}
