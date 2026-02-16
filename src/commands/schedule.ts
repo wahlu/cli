@@ -5,30 +5,55 @@ import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
 export const scheduleCommand = new Command("schedule")
-	.description("Manage scheduled posts")
+	.description("Schedule posts for future publishing to specific integrations")
 	.addHelpText(
 		"after",
 		`
-Examples:
-  wahlu schedule list                      List all scheduled posts
-  wahlu schedule list --json               List as JSON
-  wahlu schedule create <post-id> \\
-    --at 2026-03-15T14:00:00Z \\
-    --integrations int-1 int-2             Schedule a post
-  wahlu schedule delete <scheduled-id>     Remove from schedule
+Scheduled posts are queued for publishing at a specific date and time
+to one or more connected social media integrations.
 
-Workflow:
-  1. Create a post:         wahlu post create --name "My post" ...
+Subcommands:
+  list              List all scheduled posts
+  create <post-id>  Schedule a post for future publishing
+  delete <id>       Remove a post from the schedule (does not delete the post)
+
+Typical workflow:
+  1. Create a post:         wahlu post create --name "My post" --instagram '...'
   2. Find integration IDs:  wahlu integration list
-  3. Schedule it:           wahlu schedule create <post-id> --at <datetime> --integrations <id>`,
+  3. Schedule it:           wahlu schedule create <post-id> --at <datetime> --integrations <id>
+
+Full documentation: https://wahlu.com/docs`,
 	);
 
 scheduleCommand
 	.command("list")
 	.description("List scheduled posts")
-	.option("--page <n>", "Page number", parseInt)
-	.option("--limit <n>", "Items per page", parseInt)
+	.option("--page <n>", "Page number (default: 1)", parseInt)
+	.option("--limit <n>", "Items per page (default: 50, max: 100)", parseInt)
 	.option("--json", "Output as JSON")
+	.addHelpText(
+		"after",
+		`
+Returns a paginated list of scheduled posts, sorted by scheduled_at.
+
+Response fields:
+  id                string       Scheduled post ID
+  brand_id          string       Brand ID
+  post_id           string       Referenced post ID
+  scheduled_at      string       ISO 8601 datetime for publishing
+  integration_ids   string[]     Integration IDs to publish to
+  status            string       Status (e.g. "ready_for_publishing", "published", "failed")
+  approval_status   string|null  Approval status
+  source            string|null  "api" for API-created entries
+  failure_reason    string|null  Failure reason if publishing failed
+  thumbnail_url     string|null  Post thumbnail URL
+  created_at        string       ISO 8601 timestamp
+  updated_at        string       ISO 8601 timestamp
+
+Examples:
+  wahlu schedule list
+  wahlu schedule list --limit 5 --json`,
+	)
 	.action(async function (this: Command, opts) {
 		const brandId = resolveBrandId(this);
 		const client = new WahluClient(getApiKey(), getApiUrl());
@@ -56,11 +81,40 @@ scheduleCommand
 
 scheduleCommand
 	.command("create")
-	.description("Schedule a post")
-	.argument("<post-id>", "Post ID to schedule")
-	.requiredOption("--at <datetime>", "ISO 8601 datetime (e.g. 2026-03-15T14:00:00Z)")
-	.requiredOption("--integrations <ids...>", "Integration IDs to publish to")
+	.description("Schedule a post for future publishing")
+	.argument("<post-id>", "Post ID to schedule (must exist in the brand)")
+	.requiredOption(
+		"--at <datetime>",
+		"ISO 8601 datetime (e.g. 2026-03-15T14:00:00Z)",
+	)
+	.requiredOption(
+		"--integrations <ids...>",
+		"Integration IDs to publish to (max 20)",
+	)
 	.option("--json", "Output as JSON")
+	.addHelpText(
+		"after",
+		`
+Schedules an existing post for future publishing. The post must already
+exist in the brand, and the integration IDs must be connected accounts.
+
+Required fields:
+  <post-id>            The ID of an existing post in this brand
+  --at <datetime>      ISO 8601 datetime (e.g. "2026-03-15T14:00:00Z")
+  --integrations <ids> Space-separated integration IDs
+
+Find integration IDs with: wahlu integration list
+
+Examples:
+  wahlu schedule create post-abc \\
+    --at 2026-03-15T14:00:00Z \\
+    --integrations int-123
+
+  wahlu schedule create post-abc \\
+    --at 2026-03-15T14:00:00Z \\
+    --integrations int-123 int-456 int-789 \\
+    --json`,
+	)
 	.action(async function (this: Command, postId: string, opts) {
 		const brandId = resolveBrandId(this);
 		const client = new WahluClient(getApiKey(), getApiUrl());
@@ -74,8 +128,17 @@ scheduleCommand
 
 scheduleCommand
 	.command("delete")
-	.description("Unschedule a post")
-	.argument("<scheduled-post-id>", "Scheduled post ID")
+	.description("Remove a post from the schedule")
+	.argument("<scheduled-post-id>", "Scheduled post ID (not the post ID)")
+	.addHelpText(
+		"after",
+		`
+Removes a scheduled post from the publishing queue. The post itself is
+not deleted — only the schedule entry is removed.
+
+Examples:
+  wahlu schedule delete sched-abc123`,
+	)
 	.action(async function (this: Command, id: string) {
 		const brandId = resolveBrandId(this);
 		const client = new WahluClient(getApiKey(), getApiUrl());
