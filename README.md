@@ -33,15 +33,15 @@ wahlu brand list
 # Set a default brand so you don't need --brand every time
 wahlu brand switch <brand-id>
 
-# List posts
+# List content items (via post alias)
 wahlu post list
 
-# Create a post
+# Create a content item
 wahlu post create --name "Monday motivation" \
   --instagram '{"description":"Rise and grind","post_type":"grid_post"}'
 
 # Schedule it
-wahlu schedule create <post-id> \
+wahlu schedule create <content-item-id> \
   --at 2026-03-15T14:00:00Z \
   --integrations <integration-id>
 
@@ -64,7 +64,7 @@ wahlu publication list
 
 ### Brands
 
-Brands represent social media profiles. All posts, media, schedules, and queues belong to a brand.
+Brands represent social media profiles. All content items, media, publish runs, and queues belong to a brand.
 
 | Command | Description |
 |---------|-------------|
@@ -90,23 +90,23 @@ Brands represent social media profiles. All posts, media, schedules, and queues 
 | `created_at` | string | ISO 8601 timestamp |
 | `updated_at` | string | ISO 8601 timestamp |
 
-### Posts
+### Content items (`post` command alias)
 
-Posts are the core content unit. Each post can have platform-specific settings for Instagram, TikTok, Facebook, YouTube, and LinkedIn.
+Content items are the core content unit. The `post` command name is kept as a compatibility alias. Each content item can have platform-specific settings for Instagram, TikTok, Facebook, YouTube, and LinkedIn.
 
 | Command | Description |
 |---------|-------------|
-| `wahlu post list` | List posts (paginated) |
-| `wahlu post get <id>` | Get full post details |
-| `wahlu post create [options]` | Create a new post |
-| `wahlu post update <id> [options]` | Update a post (partial update) |
-| `wahlu post delete <id>` | Permanently delete a post |
+| `wahlu post list` | List content items (paginated) |
+| `wahlu post get <id>` | Get full content item details |
+| `wahlu post create [options]` | Create a new content item |
+| `wahlu post update <id> [options]` | Update a content item (partial update) |
+| `wahlu post delete <id>` | Permanently delete a content item |
 
 **Create/update options:**
 
 | Option | Description |
 |--------|-------------|
-| `--name <name>` | Post name (max 500 chars) |
+| `--name <name>` | Content item name (max 500 chars) |
 | `--instagram <json>` | Instagram settings as JSON string |
 | `--tiktok <json>` | TikTok settings as JSON string |
 | `--facebook <json>` | Facebook settings as JSON string |
@@ -118,8 +118,8 @@ Posts are the core content unit. Each post can have platform-specific settings f
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | string | Post ID |
-| `name` | string\|null | Post name |
+| `id` | string | Content item ID |
+| `name` | string\|null | Content item name |
 | `brand_id` | string | Brand ID |
 | `label_ids` | string[] | Attached label IDs |
 | `created_by` | string\|null | Creator user ID |
@@ -206,15 +206,15 @@ wahlu post create --name "Article share" \
   --linkedin '{"description":"Read our latest","post_type":"li_article","original_url":"https://example.com","title":"Our Post"}'
 ```
 
-### Scheduled posts
+### Publish runs (`schedule` command alias)
 
-Schedule posts for future publishing to specific integrations.
+Schedule content items for future publishing to specific integrations. The `schedule` command name is kept as a compatibility alias.
 
 | Command | Description |
 |---------|-------------|
-| `wahlu schedule list` | List scheduled posts (paginated) |
-| `wahlu schedule create <post-id>` | Schedule a post |
-| `wahlu schedule delete <id>` | Remove from schedule (does not delete the post) |
+| `wahlu schedule list` | List publish runs (paginated) |
+| `wahlu schedule create <content-item-id>` | Schedule a content item |
+| `wahlu schedule delete <id>` | Remove a publish run (does not delete the content item) |
 
 **Create options:**
 
@@ -227,8 +227,8 @@ Schedule posts for future publishing to specific integrations.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | string | Scheduled post ID |
-| `post_id` | string | Referenced post ID |
+| `id` | string | Publish run ID |
+| `content_item_id` | string | Referenced content item ID |
 | `scheduled_at` | string | ISO 8601 datetime |
 | `integration_ids` | string[] | Integration IDs |
 | `status` | string | e.g. `ready_for_publishing`, `published`, `failed` |
@@ -241,19 +241,19 @@ Schedule posts for future publishing to specific integrations.
 **Example:**
 
 ```bash
-wahlu schedule create post-abc \
+wahlu schedule create content-abc \
   --at 2026-03-15T14:00:00Z \
   --integrations int-123 int-456
 ```
 
 ### Queues
 
-Queues define recurring time slots for automatic post publishing.
+Queues define recurring time slots for automatic publishing.
 
 | Command | Description |
 |---------|-------------|
 | `wahlu queue list` | List all queues |
-| `wahlu queue add <queue-id> <post-id>` | Add a post to a queue |
+| `wahlu queue add <queue-id> <content-item-id>` | Add a content item to a queue |
 
 **Response fields:**
 
@@ -267,7 +267,8 @@ Queues define recurring time slots for automatic post publishing.
 | `timezone` | string\|null | IANA timezone |
 | `next_run_at` | string\|null | Next scheduled publishing time |
 | `loop` | boolean | Whether to loop through posts |
-| `post_ids` | string[] | Ordered post IDs in the queue |
+| `content_item_ids` | string[] | Ordered content item IDs in the queue |
+| `post_ids` | string[] | Legacy compatibility mirror of queue item IDs |
 | `integration_ids` | string[] | Integration IDs |
 | `created_at` | string | ISO 8601 timestamp |
 | `updated_at` | string | ISO 8601 timestamp |
@@ -309,14 +310,14 @@ Upload images and videos to your media library.
 wahlu media upload ./photo.jpg
 # Uploaded photo.jpg — media ID: mid-abc123
 
-# Use the media ID in a post
+# Use the media ID in a content item
 wahlu post create --name "Photo post" \
   --instagram '{"description":"Nice!","post_type":"grid_post","media_ids":["mid-abc123"]}'
 ```
 
 ### Ideas
 
-Save content ideas for later development into full posts.
+Save content ideas for later development into full content items.
 
 | Command | Description |
 |---------|-------------|
@@ -346,7 +347,7 @@ Save content ideas for later development into full posts.
 
 ### Labels
 
-Labels categorise and organise posts and media.
+Labels categorise and organise content items and media.
 
 | Command | Description |
 |---------|-------------|
@@ -372,7 +373,7 @@ Labels categorise and organise posts and media.
 
 ### Integrations (read-only)
 
-Connected social media accounts. You need integration IDs when scheduling posts.
+Connected social media accounts. You need integration IDs when scheduling content items.
 
 | Command | Description |
 |---------|-------------|
@@ -394,11 +395,11 @@ Connected social media accounts. You need integration IDs when scheduling posts.
 
 ### Publications (read-only)
 
-Records of posts published to social media platforms.
+Records of content items published to social media platforms.
 
 | Command | Description |
 |---------|-------------|
-| `wahlu publication list` | List published posts (paginated) |
+| `wahlu publication list` | List published content items (paginated) |
 
 **Response fields:**
 
@@ -406,8 +407,8 @@ Records of posts published to social media platforms.
 |-------|------|-------------|
 | `id` | string | Publication ID |
 | `platform` | string | `instagram` \| `tiktok` \| `facebook` \| `youtube` \| `linkedin` |
-| `post_id` | string | Source post ID |
-| `post_name` | string\|null | Post name |
+| `post_id` | string | Source content item ID (legacy field name) |
+| `post_name` | string\|null | Content item name |
 | `post_type` | string\|null | Post type |
 | `status` | string | `processing` \| `published` \| `failed` |
 | `source` | string\|null | `calendar` (from schedule) or `queue` (from queue) |
@@ -461,7 +462,7 @@ Environment variables take priority over config file:
 Every command supports `--json` for structured output:
 
 ```bash
-# Get post IDs
+# Get content item IDs
 wahlu post list --json | jq '.[].id'
 
 # Get integration IDs for scheduling
@@ -471,8 +472,8 @@ wahlu integration list --json | jq '.[] | {id, platform, username}'
 wahlu publication list --json | jq '.[] | select(.status == "failed")'
 
 # Create and capture the ID
-POST_ID=$(wahlu post create --name "Auto post" --json | jq -r '.id')
-wahlu schedule create $POST_ID --at 2026-03-15T14:00:00Z --integrations int-123
+CONTENT_ITEM_ID=$(wahlu post create --name "Auto post" --json | jq -r '.id')
+wahlu schedule create $CONTENT_ITEM_ID --at 2026-03-15T14:00:00Z --integrations int-123
 ```
 
 ## Documentation

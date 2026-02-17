@@ -13,8 +13,8 @@ export const brandCommand = new Command("brand")
 	.addHelpText(
 		"after",
 		`
-A brand represents a social media profile in Wahlu. All posts, media,
-schedules, and queues belong to a brand. Most commands require a brand.
+A brand represents a social media profile in Wahlu. All content items, media,
+publish runs, and queues belong to a brand. Most commands require a brand.
 
 Subcommands:
   list           List all brands accessible to your API key
@@ -106,7 +106,7 @@ require a brand will use this ID unless overridden with --brand.
 
 Examples:
   wahlu brand switch abc123
-  wahlu post list                     # uses abc123 automatically
+  wahlu post list                     # uses abc123 automatically (content items)
   wahlu post list --brand xyz789      # overrides for this command`,
 	)
 	.action((brandId: string) => {

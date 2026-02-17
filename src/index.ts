@@ -25,7 +25,7 @@ Getting started:
   2. wahlu auth login <your-api-key>
   3. wahlu brand list
   4. wahlu brand switch <brand-id>
-  5. wahlu post list
+  5. wahlu post list       # post command is a compatibility alias for content items
 
 All list/get/create/update commands support --json for machine-readable output.
 Run 'wahlu <command> --help' for detailed usage, fields, and examples.

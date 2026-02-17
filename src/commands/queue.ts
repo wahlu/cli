@@ -5,16 +5,16 @@ import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
 export const queueCommand = new Command("queue")
-	.description("View publishing queues and add posts to them")
+	.description("View publishing queues and add content items to them")
 	.addHelpText(
 		"after",
 		`
-Queues define recurring time slots for automatic post publishing.
-Posts added to a queue are published at the next available slot.
+Queues define recurring time slots for automatic publishing.
+Content items added to a queue are published at the next available slot.
 
 Subcommands:
   list                       List all queues and their status
-  add <queue-id> <post-id>   Add a post to a queue
+  add <queue-id> <content-item-id>   Add a content item to a queue
 
 Queues are created and configured in the Wahlu web app.
 
@@ -44,7 +44,8 @@ Response fields:
   valid_until       string|null  ISO 8601 end date
   next_run_at       string|null  Next scheduled publishing time
   loop              boolean      Whether to loop through posts
-  post_ids          string[]     Ordered list of post IDs in the queue
+  content_item_ids  string[]     Ordered list of content item IDs in the queue
+  post_ids          string[]     Legacy compatibility mirror of queue item IDs
   integration_ids   string[]     Integration IDs to publish to
   skip_count        number       Number of posts skipped
   created_at        string       ISO 8601 timestamp
@@ -74,8 +75,7 @@ Examples:
 					key: "next_run_at",
 					header: "Next Run",
 					width: 20,
-					transform: (v) =>
-						v ? new Date(v as string).toLocaleString() : "-",
+					transform: (v) => (v ? new Date(v as string).toLocaleString() : "-"),
 				},
 			],
 		});
@@ -83,33 +83,30 @@ Examples:
 
 queueCommand
 	.command("add")
-	.description("Add a post to a queue")
+	.description("Add a content item to a queue")
 	.argument("<queue-id>", "Queue ID")
-	.argument("<post-id>", "Post ID to add")
+	.argument("<content-item-id>", "Content item ID to add")
 	.option("--json", "Output as JSON")
 	.addHelpText(
 		"after",
 		`
-Adds a post to a queue. The post will be published at the queue's
+Adds a content item to a queue. The item will be published at the queue's
 next available time slot.
 
 Examples:
-  wahlu queue add queue-abc post-xyz
-  wahlu queue add queue-abc post-xyz --json`,
+  wahlu queue add queue-abc content-xyz
+  wahlu queue add queue-abc content-xyz --json`,
 	)
 	.action(async function (
 		this: Command,
 		queueId: string,
-		postId: string,
+		contentItemId: string,
 		opts,
 	) {
 		const brandId = resolveBrandId(this);
 		const client = new WahluClient(getApiKey(), getApiUrl());
-		const res = await client.patch(
-			`/brands/${brandId}/queues/${queueId}`,
-			{
-				post_ids: [postId],
-			},
-		);
+		const res = await client.patch(`/brands/${brandId}/queues/${queueId}`, {
+			content_item_ids: [contentItemId],
+		});
 		output(res.data, { json: opts.json });
 	});

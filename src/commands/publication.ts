@@ -5,11 +5,13 @@ import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
 export const publicationCommand = new Command("publication")
-	.description("View posts that have been published to platforms (read-only)")
+	.description(
+		"View content items that have been published to platforms (read-only)",
+	)
 	.addHelpText(
 		"after",
 		`
-Publications are records of posts that have been successfully published
+Publications are records of content items that have been successfully published
 to social media platforms. This is a read-only view of your publishing history.
 
 Subcommands:
@@ -20,20 +22,24 @@ Full documentation: https://wahlu.com/docs`,
 
 publicationCommand
 	.command("list")
-	.description("List published posts")
-	.option("--page <n>", "Page number (default: 1)", parseInt)
-	.option("--limit <n>", "Items per page (default: 50, max: 100)", parseInt)
+	.description("List published content items")
+	.option("--page <n>", "Page number (default: 1)", Number.parseInt)
+	.option(
+		"--limit <n>",
+		"Items per page (default: 50, max: 100)",
+		Number.parseInt,
+	)
 	.option("--json", "Output as JSON")
 	.addHelpText(
 		"after",
 		`
-Returns a paginated list of published posts.
+Returns a paginated list of published content items.
 
 Response fields:
   id              string       Publication ID
   platform        string       Platform: "instagram" | "tiktok" | "facebook" | "youtube" | "linkedin"
-  post_id         string       Source post ID
-  post_name       string|null  Post name
+  post_id         string       Source content item ID (legacy field name)
+  post_name       string|null  Content item name
   post_type       string|null  Post type (e.g. "grid_post", "reel", "video")
   media_type      string|null  Media type
   status          string       "processing" | "published" | "failed"
@@ -69,8 +75,7 @@ Examples:
 					key: "published_at",
 					header: "Published",
 					width: 20,
-					transform: (v) =>
-						v ? new Date(v as string).toLocaleString() : "-",
+					transform: (v) => (v ? new Date(v as string).toLocaleString() : "-"),
 				},
 			],
 		});

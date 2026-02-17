@@ -5,41 +5,48 @@ import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
 export const scheduleCommand = new Command("schedule")
-	.description("Schedule posts for future publishing to specific integrations")
+	.description(
+		"Schedule content items for future publishing to specific integrations",
+	)
 	.addHelpText(
 		"after",
 		`
-Scheduled posts are queued for publishing at a specific date and time
-to one or more connected social media integrations.
+Publish runs are queued for publishing at a specific date and time to
+one or more connected social media integrations. This command is a
+compatibility alias kept as 'schedule'.
 
 Subcommands:
-  list              List all scheduled posts
-  create <post-id>  Schedule a post for future publishing
-  delete <id>       Remove a post from the schedule (does not delete the post)
+  list                      List all publish runs
+  create <content-item-id>  Schedule a content item for future publishing
+  delete <id>               Remove a publish run (does not delete the content item)
 
 Typical workflow:
-  1. Create a post:         wahlu post create --name "My post" --instagram '...'
+  1. Create content:        wahlu post create --name "My post" --instagram '...'
   2. Find integration IDs:  wahlu integration list
-  3. Schedule it:           wahlu schedule create <post-id> --at <datetime> --integrations <id>
+  3. Schedule it:           wahlu schedule create <content-item-id> --at <datetime> --integrations <id>
 
 Full documentation: https://wahlu.com/docs`,
 	);
 
 scheduleCommand
 	.command("list")
-	.description("List scheduled posts")
-	.option("--page <n>", "Page number (default: 1)", parseInt)
-	.option("--limit <n>", "Items per page (default: 50, max: 100)", parseInt)
+	.description("List publish runs")
+	.option("--page <n>", "Page number (default: 1)", Number.parseInt)
+	.option(
+		"--limit <n>",
+		"Items per page (default: 50, max: 100)",
+		Number.parseInt,
+	)
 	.option("--json", "Output as JSON")
 	.addHelpText(
 		"after",
 		`
-Returns a paginated list of scheduled posts, sorted by scheduled_at.
+Returns a paginated list of publish runs, sorted by scheduled_at.
 
 Response fields:
-  id                string       Scheduled post ID
+  id                string       Publish run ID
   brand_id          string       Brand ID
-  post_id           string       Referenced post ID
+  content_item_id   string       Referenced content item ID
   scheduled_at      string       ISO 8601 datetime for publishing
   integration_ids   string[]     Integration IDs to publish to
   status            string       Status (e.g. "ready_for_publishing", "published", "failed")
@@ -58,7 +65,7 @@ Examples:
 		const brandId = resolveBrandId(this);
 		const client = new WahluClient(getApiKey(), getApiUrl());
 		const res = await client.list(
-			`/brands/${brandId}/scheduled-posts`,
+			`/brands/${brandId}/publish-runs`,
 			opts.page,
 			opts.limit,
 		);
@@ -66,14 +73,13 @@ Examples:
 			json: opts.json,
 			columns: [
 				{ key: "id", header: "ID", width: 24 },
-				{ key: "post_id", header: "Post ID", width: 24 },
+				{ key: "content_item_id", header: "Content ID", width: 24 },
 				{ key: "status", header: "Status", width: 12 },
 				{
 					key: "scheduled_at",
 					header: "Scheduled At",
 					width: 20,
-					transform: (v) =>
-						v ? new Date(v as string).toLocaleString() : "-",
+					transform: (v) => (v ? new Date(v as string).toLocaleString() : "-"),
 				},
 			],
 		});
@@ -81,8 +87,11 @@ Examples:
 
 scheduleCommand
 	.command("create")
-	.description("Schedule a post for future publishing")
-	.argument("<post-id>", "Post ID to schedule (must exist in the brand)")
+	.description("Schedule a content item for future publishing")
+	.argument(
+		"<content-item-id>",
+		"Content item ID to schedule (must exist in the brand)",
+	)
 	.requiredOption(
 		"--at <datetime>",
 		"ISO 8601 datetime (e.g. 2026-03-15T14:00:00Z)",
@@ -95,31 +104,31 @@ scheduleCommand
 	.addHelpText(
 		"after",
 		`
-Schedules an existing post for future publishing. The post must already
+Schedules an existing content item for future publishing. The item must already
 exist in the brand, and the integration IDs must be connected accounts.
 
 Required fields:
-  <post-id>            The ID of an existing post in this brand
+  <content-item-id>    The ID of an existing content item in this brand
   --at <datetime>      ISO 8601 datetime (e.g. "2026-03-15T14:00:00Z")
   --integrations <ids> Space-separated integration IDs
 
 Find integration IDs with: wahlu integration list
 
 Examples:
-  wahlu schedule create post-abc \\
+  wahlu schedule create content-abc \\
     --at 2026-03-15T14:00:00Z \\
     --integrations int-123
 
-  wahlu schedule create post-abc \\
+  wahlu schedule create content-abc \\
     --at 2026-03-15T14:00:00Z \\
     --integrations int-123 int-456 int-789 \\
     --json`,
 	)
-	.action(async function (this: Command, postId: string, opts) {
+	.action(async function (this: Command, contentItemId: string, opts) {
 		const brandId = resolveBrandId(this);
 		const client = new WahluClient(getApiKey(), getApiUrl());
-		const res = await client.post(`/brands/${brandId}/scheduled-posts`, {
-			post_id: postId,
+		const res = await client.post(`/brands/${brandId}/publish-runs`, {
+			content_item_id: contentItemId,
 			scheduled_at: opts.at,
 			integration_ids: opts.integrations,
 		});
@@ -128,13 +137,13 @@ Examples:
 
 scheduleCommand
 	.command("delete")
-	.description("Remove a post from the schedule")
-	.argument("<scheduled-post-id>", "Scheduled post ID (not the post ID)")
+	.description("Remove a publish run")
+	.argument("<publish-run-id>", "Publish run ID")
 	.addHelpText(
 		"after",
 		`
-Removes a scheduled post from the publishing queue. The post itself is
-not deleted — only the schedule entry is removed.
+Removes a publish run from the publishing queue. The content item itself is
+not deleted — only the run entry is removed.
 
 Examples:
   wahlu schedule delete sched-abc123`,
@@ -142,6 +151,6 @@ Examples:
 	.action(async function (this: Command, id: string) {
 		const brandId = resolveBrandId(this);
 		const client = new WahluClient(getApiKey(), getApiUrl());
-		await client.delete(`/brands/${brandId}/scheduled-posts/${id}`);
-		console.log(`Scheduled post ${id} removed.`);
+		await client.delete(`/brands/${brandId}/publish-runs/${id}`);
+		console.log(`Publish run ${id} removed.`);
 	});
