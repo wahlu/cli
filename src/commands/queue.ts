@@ -45,7 +45,6 @@ Response fields:
   next_run_at       string|null  Next scheduled publishing time
   loop              boolean      Whether to loop through posts
   content_item_ids  string[]     Ordered list of content item IDs in the queue
-  post_ids          string[]     Legacy compatibility mirror of queue item IDs
   integration_ids   string[]     Integration IDs to publish to
   skip_count        number       Number of posts skipped
   created_at        string       ISO 8601 timestamp
@@ -105,8 +104,15 @@ Examples:
 	) {
 		const brandId = resolveBrandId(this);
 		const client = new WahluClient(getApiKey(), getApiUrl());
+		const queueRes = await client.get<{ content_item_ids?: string[] }>(
+			`/brands/${brandId}/queues/${queueId}`,
+		);
+		const currentIds = queueRes.data?.content_item_ids ?? [];
+		const nextIds = currentIds.includes(contentItemId)
+			? currentIds
+			: [...currentIds, contentItemId];
 		const res = await client.patch(`/brands/${brandId}/queues/${queueId}`, {
-			content_item_ids: [contentItemId],
+			content_item_ids: nextIds,
 		});
 		output(res.data, { json: opts.json });
 	});

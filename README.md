@@ -38,7 +38,7 @@ wahlu post list
 
 # Create a content item
 wahlu post create --name "Monday motivation" \
-  --instagram '{"description":"Rise and grind","post_type":"grid_post"}'
+  --instagram '{"description":"Rise and grind","post_type":"GRID_POST"}'
 
 # Schedule it
 wahlu schedule create <content-item-id> \
@@ -139,7 +139,7 @@ Content items are the core content unit. The `post` command name is kept as a co
 | Field | Type | Values |
 |-------|------|--------|
 | `description` | string | Caption text |
-| `post_type` | string | `grid_post` \| `reel` \| `story` |
+| `post_type` | string | `GRID_POST` \| `REEL` \| `STORY` |
 | `media_ids` | string[] | Media IDs to attach |
 | `trial_reel` | boolean | Post as trial reel (non-followers first) |
 | `graduation_strategy` | string | `MANUAL` \| `SS_PERFORMANCE` |
@@ -149,7 +149,7 @@ Content items are the core content unit. The `post` command name is kept as a co
 | Field | Type | Values |
 |-------|------|--------|
 | `description` | string | Caption text |
-| `post_type` | string | `video` \| `image` \| `carousel` |
+| `post_type` | string | `VIDEO` \| `IMAGE` \| `CAROUSEL` |
 | `media_ids` | string[] | Media IDs to attach |
 | `privacy_level` | string | `PUBLIC_TO_EVERYONE` \| `MUTUAL_FOLLOW_FRIENDS` \| `FOLLOWER_OF_CREATOR` \| `SELF_ONLY` |
 | `allow_comment` | boolean | Allow comments (default: true) |
@@ -164,7 +164,7 @@ Content items are the core content unit. The `post` command name is kept as a co
 | Field | Type | Values |
 |-------|------|--------|
 | `description` | string | Caption text |
-| `post_type` | string | `fb_post` \| `fb_story` \| `fb_reel` \| `fb_text` |
+| `post_type` | string | `FB_POST` \| `FB_STORY` \| `FB_REEL` \| `FB_TEXT` |
 | `media_ids` | string[] | Media IDs to attach |
 
 **YouTube** (`--youtube`):
@@ -173,9 +173,9 @@ Content items are the core content unit. The `post` command name is kept as a co
 |-------|------|--------|
 | `title` | string | Video title |
 | `description` | string | Video description |
-| `post_type` | string | `yt_short` \| `yt_video` |
+| `post_type` | string | `YT_SHORT` \| `YT_VIDEO` |
 | `media_ids` | string[] | Media IDs to attach |
-| `privacy_level` | string | `public` \| `unlisted` \| `private` |
+| `privacy_level` | string | `PUBLIC` \| `UNLISTED` \| `PRIVATE` |
 | `notify_subscribers` | boolean | Notify subscribers on publish |
 
 **LinkedIn** (`--linkedin`):
@@ -183,27 +183,27 @@ Content items are the core content unit. The `post` command name is kept as a co
 | Field | Type | Values |
 |-------|------|--------|
 | `description` | string | Post text |
-| `post_type` | string | `li_text` \| `li_image` \| `li_video` \| `li_article` |
+| `post_type` | string | `LI_TEXT` \| `LI_IMAGE` \| `LI_VIDEO` \| `LI_ARTICLE` |
 | `media_ids` | string[] | Media IDs to attach |
 | `visibility` | string | `PUBLIC` \| `CONNECTIONS` |
-| `title` | string | Article title (`li_article` only) |
-| `original_url` | string | Article URL (`li_article` only) |
+| `title` | string | Article title (`LI_ARTICLE` only) |
+| `original_url` | string | Article URL (`LI_ARTICLE` only) |
 
 **Examples:**
 
 ```bash
 # Instagram grid post
 wahlu post create --name "Photo post" \
-  --instagram '{"description":"Hello!","post_type":"grid_post","media_ids":["mid-123"]}'
+  --instagram '{"description":"Hello!","post_type":"GRID_POST","media_ids":["mid-123"]}'
 
 # Cross-platform video
 wahlu post create --name "Video" \
-  --tiktok '{"description":"Check this out","post_type":"video","media_ids":["mid-123"]}' \
-  --instagram '{"description":"Check this out","post_type":"reel","media_ids":["mid-123"]}'
+  --tiktok '{"description":"Check this out","post_type":"VIDEO","media_ids":["mid-123"]}' \
+  --instagram '{"description":"Check this out","post_type":"REEL","media_ids":["mid-123"]}'
 
 # LinkedIn article
 wahlu post create --name "Article share" \
-  --linkedin '{"description":"Read our latest","post_type":"li_article","original_url":"https://example.com","title":"Our Post"}'
+  --linkedin '{"description":"Read our latest","post_type":"LI_ARTICLE","original_url":"https://example.com","title":"Our Post"}'
 ```
 
 ### Publish runs (`schedule` command alias)
@@ -214,6 +214,7 @@ Schedule content items for future publishing to specific integrations. The `sche
 |---------|-------------|
 | `wahlu schedule list` | List publish runs (paginated) |
 | `wahlu schedule create <content-item-id>` | Schedule a content item |
+| `wahlu schedule update <publish-run-id>` | Update a publish run (reschedule/retarget) |
 | `wahlu schedule delete <id>` | Remove a publish run (does not delete the content item) |
 
 **Create options:**
@@ -231,7 +232,7 @@ Schedule content items for future publishing to specific integrations. The `sche
 | `content_item_id` | string | Referenced content item ID |
 | `scheduled_at` | string | ISO 8601 datetime |
 | `integration_ids` | string[] | Integration IDs |
-| `status` | string | e.g. `ready_for_publishing`, `published`, `failed` |
+| `status` | string | e.g. `ready_for_processing`, `published`, `failed` |
 | `approval_status` | string\|null | Approval status |
 | `source` | string\|null | `api` for API-created entries |
 | `failure_reason` | string\|null | Failure reason |
@@ -253,7 +254,7 @@ Queues define recurring time slots for automatic publishing.
 | Command | Description |
 |---------|-------------|
 | `wahlu queue list` | List all queues |
-| `wahlu queue add <queue-id> <content-item-id>` | Add a content item to a queue |
+| `wahlu queue add <queue-id> <content-item-id>` | Append a content item to a queue |
 
 **Response fields:**
 
@@ -268,7 +269,6 @@ Queues define recurring time slots for automatic publishing.
 | `next_run_at` | string\|null | Next scheduled publishing time |
 | `loop` | boolean | Whether to loop through posts |
 | `content_item_ids` | string[] | Ordered content item IDs in the queue |
-| `post_ids` | string[] | Legacy compatibility mirror of queue item IDs |
 | `integration_ids` | string[] | Integration IDs |
 | `created_at` | string | ISO 8601 timestamp |
 | `updated_at` | string | ISO 8601 timestamp |
@@ -312,7 +312,7 @@ wahlu media upload ./photo.jpg
 
 # Use the media ID in a content item
 wahlu post create --name "Photo post" \
-  --instagram '{"description":"Nice!","post_type":"grid_post","media_ids":["mid-abc123"]}'
+  --instagram '{"description":"Nice!","post_type":"GRID_POST","media_ids":["mid-abc123"]}'
 ```
 
 ### Ideas

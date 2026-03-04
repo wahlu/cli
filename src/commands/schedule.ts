@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { WahluClient } from "../lib/client.js";
+import { CliError, WahluClient } from "../lib/client.js";
 import { getApiKey, getApiUrl } from "../lib/config.js";
 import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
@@ -18,6 +18,7 @@ compatibility alias kept as 'schedule'.
 Subcommands:
   list                      List all publish runs
   create <content-item-id>  Schedule a content item for future publishing
+  update <publish-run-id>   Update an existing publish run
   delete <id>               Remove a publish run (does not delete the content item)
 
 Typical workflow:
@@ -49,7 +50,7 @@ Response fields:
   content_item_id   string       Referenced content item ID
   scheduled_at      string       ISO 8601 datetime for publishing
   integration_ids   string[]     Integration IDs to publish to
-  status            string       Status (e.g. "ready_for_publishing", "published", "failed")
+  status            string       Status (e.g. "ready_for_processing", "published", "failed")
   approval_status   string|null  Approval status
   source            string|null  "api" for API-created entries
   failure_reason    string|null  Failure reason if publishing failed
@@ -132,6 +133,65 @@ Examples:
 			scheduled_at: opts.at,
 			integration_ids: opts.integrations,
 		});
+		output(res.data, { json: opts.json });
+	});
+
+scheduleCommand
+	.command("update")
+	.description("Update an existing publish run")
+	.argument("<publish-run-id>", "Publish run ID")
+	.option(
+		"--at <datetime>",
+		"New ISO 8601 datetime (e.g. 2026-03-15T14:00:00Z)",
+	)
+	.option(
+		"--integrations <ids...>",
+		"Replacement integration IDs to publish to (max 20)",
+	)
+	.option(
+		"--content-item <content-item-id>",
+		"Optional replacement content item ID",
+	)
+	.option(
+		"--approval <status>",
+		"Optional approval status: approved | pending_review | rejected",
+	)
+	.option("--json", "Output as JSON")
+	.addHelpText(
+		"after",
+		`
+Updates one or more fields on a publish run.
+
+At least one update field is required:
+  --at <datetime>
+  --integrations <ids...>
+  --content-item <content-item-id>
+  --approval <status>
+
+Examples:
+  wahlu schedule update run-abc --at 2026-03-16T09:30:00Z
+  wahlu schedule update run-abc --integrations int-1 int-2
+  wahlu schedule update run-abc --content-item content-xyz --approval approved`,
+	)
+	.action(async function (this: Command, publishRunId: string, opts) {
+		const brandId = resolveBrandId(this);
+		const client = new WahluClient(getApiKey(), getApiUrl());
+		const body: Record<string, unknown> = {};
+		if (opts.at) body.scheduled_at = opts.at;
+		if (opts.integrations) body.integration_ids = opts.integrations;
+		if (opts.contentItem) body.content_item_id = opts.contentItem;
+		if (opts.approval) body.approval_status = opts.approval;
+
+		if (Object.keys(body).length === 0) {
+			throw new CliError(
+				"No update fields provided. Use --at, --integrations, --content-item, or --approval.",
+			);
+		}
+
+		const res = await client.patch(
+			`/brands/${brandId}/publish-runs/${publishRunId}`,
+			body,
+		);
 		output(res.data, { json: opts.json });
 	});
 

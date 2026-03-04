@@ -137,21 +137,21 @@ multiple platforms in a single content item by providing multiple --<platform> f
 
 Examples:
   wahlu post create --name "Monday post" \\
-    --instagram '{"description":"Hello!","post_type":"grid_post"}'
+    --instagram '{"description":"Hello!","post_type":"GRID_POST"}'
 
   wahlu post create --name "Cross-platform video" \\
-    --tiktok '{"description":"Check this out","post_type":"video","media_ids":["mid-123"]}' \\
-    --instagram '{"description":"Check this out","post_type":"reel","media_ids":["mid-123"]}'
+    --tiktok '{"description":"Check this out","post_type":"VIDEO","media_ids":["mid-123"]}' \\
+    --instagram '{"description":"Check this out","post_type":"REEL","media_ids":["mid-123"]}'
 
   wahlu post create --name "Article share" \\
-    --linkedin '{"description":"Read our latest post","post_type":"li_article","original_url":"https://example.com/post","title":"Our Latest Post"}'
+    --linkedin '{"description":"Read our latest post","post_type":"LI_ARTICLE","original_url":"https://example.com/post","title":"Our Latest Post"}'
 
 Platform settings reference:
 
   Instagram (--instagram):
     Field                Type      Values / Description
     description          string    Caption text
-    post_type            string    "grid_post" | "reel" | "story"
+    post_type            string    "GRID_POST" | "REEL" | "STORY"
     media_ids            string[]  Media IDs to attach
     trial_reel           boolean   Post as trial reel (shown to non-followers first)
     graduation_strategy  string    "MANUAL" | "SS_PERFORMANCE" (auto-graduate trial reels)
@@ -159,7 +159,7 @@ Platform settings reference:
   TikTok (--tiktok):
     Field                Type      Values / Description
     description          string    Caption text
-    post_type            string    "video" | "image" | "carousel"
+    post_type            string    "VIDEO" | "IMAGE" | "CAROUSEL"
     media_ids            string[]  Media IDs to attach
     privacy_level        string    "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY"
     allow_comment        boolean   Allow comments (default: true)
@@ -172,26 +172,26 @@ Platform settings reference:
   Facebook (--facebook):
     Field                Type      Values / Description
     description          string    Caption text
-    post_type            string    "fb_post" | "fb_story" | "fb_reel" | "fb_text"
+    post_type            string    "FB_POST" | "FB_STORY" | "FB_REEL" | "FB_TEXT"
     media_ids            string[]  Media IDs to attach
 
   YouTube (--youtube):
     Field                Type      Values / Description
     title                string    Video title
     description          string    Video description
-    post_type            string    "yt_short" | "yt_video"
+    post_type            string    "YT_SHORT" | "YT_VIDEO"
     media_ids            string[]  Media IDs to attach
-    privacy_level        string    "public" | "unlisted" | "private"
+    privacy_level        string    "PUBLIC" | "UNLISTED" | "PRIVATE"
     notify_subscribers   boolean   Notify subscribers on publish
 
   LinkedIn (--linkedin):
     Field                Type      Values / Description
     description          string    Post text
-    post_type            string    "li_text" | "li_image" | "li_video" | "li_article"
+    post_type            string    "LI_TEXT" | "LI_IMAGE" | "LI_VIDEO" | "LI_ARTICLE"
     media_ids            string[]  Media IDs to attach
     visibility           string    "PUBLIC" | "CONNECTIONS"
-    title                string    Article title (li_article only)
-    original_url         string    Article URL (li_article only)
+    title                string    Article title (LI_ARTICLE only)
+    original_url         string    Article URL (LI_ARTICLE only)
 
 Full documentation: https://wahlu.com/docs`,
 	)
