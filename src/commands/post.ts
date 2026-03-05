@@ -4,16 +4,25 @@ import { getApiKey, getApiUrl } from "../lib/config.js";
 import { output } from "../lib/output.js";
 import { resolveBrandId } from "../lib/resolve-brand.js";
 
+function parseJsonOption(optionName: string, value?: string) {
+	if (!value) return undefined;
+	try {
+		return JSON.parse(value);
+	} catch {
+		throw new Error(`Invalid JSON for --${optionName}`);
+	}
+}
+
 export const postCommand = new Command("post")
 	.description(
-		"Create, update, list, and delete content items with per-platform settings",
+		"Create, update, list, and delete content items with canonical copy and platform settings",
 	)
 	.addHelpText(
 		"after",
 		`
 Content items are the core content unit in Wahlu. This command is a compatibility
-alias kept as 'post'. Each content item can have platform-specific
-settings for Instagram, TikTok, Facebook, YouTube, and LinkedIn.
+alias kept as 'post'. Captions/hashtags are canonical via copy_mode and
+single_copy/platform_copy. Platform settings are for media/post options.
 
 Subcommands:
   list              List all content items for the brand
@@ -53,6 +62,9 @@ Response fields (per content item):
   label_ids             string[]     Attached label IDs
   created_by            string|null  Creator user ID
   thumbnail_timestamp   number       Thumbnail timestamp (seconds)
+  copy_mode             string|null  "single" | "per_platform"
+  single_copy           object|null  Canonical shared caption + hashtags
+  platform_copy         object|null  Canonical per-platform caption map
   instagram_settings    object|null  Instagram configuration
   tiktok_settings       object|null  TikTok configuration
   facebook_settings     object|null  Facebook configuration
@@ -122,6 +134,18 @@ postCommand
 	.command("create")
 	.description("Create a new content item")
 	.option("--name <name>", "Content item name (max 500 chars)")
+	.option(
+		"--copy-mode <mode>",
+		'Canonical copy mode: "single" or "per_platform"',
+	)
+	.option(
+		"--single-copy <json>",
+		'Canonical copy JSON (when copy_mode=single): {"caption":"...","hashtags":["..."],"title":"..."}',
+	)
+	.option(
+		"--platform-copy <json>",
+		'Per-platform copy JSON (when copy_mode=per_platform): {"instagram":{"caption":"...","hashtags":[]}}',
+	)
 	.option("--instagram <json>", "Instagram settings as JSON string")
 	.option("--tiktok <json>", "TikTok settings as JSON string")
 	.option("--facebook <json>", "Facebook settings as JSON string")
@@ -132,25 +156,36 @@ postCommand
 	.addHelpText(
 		"after",
 		`
-Creates a new content item with optional platform-specific settings. You can target
-multiple platforms in a single content item by providing multiple --<platform> flags.
+Creates a new content item with canonical copy plus optional platform settings.
+Captions/hashtags are read from copy_mode + single_copy/platform_copy.
+You can target multiple platforms in one content item.
 
 Examples:
   wahlu post create --name "Monday post" \\
-    --instagram '{"description":"Hello!","post_type":"GRID_POST"}'
+    --copy-mode single \\
+    --single-copy '{"caption":"Hello!","hashtags":["wahlu"]}' \\
+    --instagram '{"post_type":"GRID_POST"}'
 
   wahlu post create --name "Cross-platform video" \\
-    --tiktok '{"description":"Check this out","post_type":"VIDEO","media_ids":["mid-123"]}' \\
-    --instagram '{"description":"Check this out","post_type":"REEL","media_ids":["mid-123"]}'
+    --copy-mode per_platform \\
+    --platform-copy '{"tiktok":{"caption":"Check this out","hashtags":["video"]},"instagram":{"caption":"Reel version","hashtags":[]}}' \\
+    --tiktok '{"post_type":"VIDEO","media_ids":["mid-123"]}' \\
+    --instagram '{"post_type":"REEL","media_ids":["mid-123"]}'
 
   wahlu post create --name "Article share" \\
-    --linkedin '{"description":"Read our latest post","post_type":"LI_ARTICLE","original_url":"https://example.com/post","title":"Our Latest Post"}'
+    --copy-mode single \\
+    --single-copy '{"caption":"Read our latest post","hashtags":[]}' \\
+    --linkedin '{"post_type":"LI_ARTICLE","original_url":"https://example.com/post","title":"Our Latest Post"}'
+
+Canonical copy fields:
+  copy_mode            "single" | "per_platform"
+  single_copy          {"caption": string, "hashtags": string[], "title"?: string}
+  platform_copy        {"instagram"?: ContentCopy, "tiktok"?: ContentCopy, "facebook"?: ContentCopy, ...}
 
 Platform settings reference:
 
   Instagram (--instagram):
     Field                Type      Values / Description
-    description          string    Caption text
     post_type            string    "GRID_POST" | "REEL" | "STORY"
     media_ids            string[]  Media IDs to attach
     trial_reel           boolean   Post as trial reel (shown to non-followers first)
@@ -158,7 +193,6 @@ Platform settings reference:
 
   TikTok (--tiktok):
     Field                Type      Values / Description
-    description          string    Caption text
     post_type            string    "VIDEO" | "IMAGE" | "CAROUSEL"
     media_ids            string[]  Media IDs to attach
     privacy_level        string    "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY"
@@ -171,7 +205,6 @@ Platform settings reference:
 
   Facebook (--facebook):
     Field                Type      Values / Description
-    description          string    Caption text
     post_type            string    "FB_POST" | "FB_STORY" | "FB_REEL" | "FB_TEXT"
     media_ids            string[]  Media IDs to attach
 
@@ -186,7 +219,6 @@ Platform settings reference:
 
   LinkedIn (--linkedin):
     Field                Type      Values / Description
-    description          string    Post text
     post_type            string    "LI_TEXT" | "LI_IMAGE" | "LI_VIDEO" | "LI_ARTICLE"
     media_ids            string[]  Media IDs to attach
     visibility           string    "PUBLIC" | "CONNECTIONS"
@@ -201,11 +233,16 @@ Full documentation: https://wahlu.com/docs`,
 		const body: Record<string, unknown> = {};
 		if (opts.name) body.name = opts.name;
 		if (opts.labels) body.label_ids = opts.labels;
-		if (opts.instagram) body.instagram_settings = JSON.parse(opts.instagram);
-		if (opts.tiktok) body.tiktok_settings = JSON.parse(opts.tiktok);
-		if (opts.facebook) body.facebook_settings = JSON.parse(opts.facebook);
-		if (opts.youtube) body.youtube_settings = JSON.parse(opts.youtube);
-		if (opts.linkedin) body.linkedin_settings = JSON.parse(opts.linkedin);
+		if (opts.copyMode) body.copy_mode = opts.copyMode;
+		if (opts.singleCopy) body.single_copy = parseJsonOption("single-copy", opts.singleCopy);
+		if (opts.platformCopy) {
+			body.platform_copy = parseJsonOption("platform-copy", opts.platformCopy);
+		}
+		if (opts.instagram) body.instagram_settings = parseJsonOption("instagram", opts.instagram);
+		if (opts.tiktok) body.tiktok_settings = parseJsonOption("tiktok", opts.tiktok);
+		if (opts.facebook) body.facebook_settings = parseJsonOption("facebook", opts.facebook);
+		if (opts.youtube) body.youtube_settings = parseJsonOption("youtube", opts.youtube);
+		if (opts.linkedin) body.linkedin_settings = parseJsonOption("linkedin", opts.linkedin);
 
 		const res = await client.post(`/brands/${brandId}/content-items`, body);
 		output(res.data, { json: opts.json });
@@ -216,6 +253,12 @@ postCommand
 	.description("Update a content item (only provided fields are changed)")
 	.argument("<content-item-id>", "Content item ID")
 	.option("--name <name>", "Content item name (max 500 chars)")
+	.option(
+		"--copy-mode <mode>",
+		'Canonical copy mode: "single" or "per_platform"',
+	)
+	.option("--single-copy <json>", "Canonical single copy JSON")
+	.option("--platform-copy <json>", "Canonical per-platform copy JSON")
 	.option("--instagram <json>", "Instagram settings as JSON string")
 	.option("--tiktok <json>", "TikTok settings as JSON string")
 	.option("--facebook <json>", "Facebook settings as JSON string")
@@ -231,7 +274,7 @@ omitted fields remain unchanged.
 
 Examples:
   wahlu post update abc123 --name "New name"
-  wahlu post update abc123 --instagram '{"description":"Updated caption"}'
+  wahlu post update abc123 --copy-mode single --single-copy '{"caption":"Updated caption","hashtags":[]}'
   wahlu post update abc123 --labels label-1 label-2
 
 See 'wahlu post create --help' for full platform settings reference.
@@ -243,11 +286,16 @@ Full documentation: https://wahlu.com/docs`,
 		const body: Record<string, unknown> = {};
 		if (opts.name) body.name = opts.name;
 		if (opts.labels) body.label_ids = opts.labels;
-		if (opts.instagram) body.instagram_settings = JSON.parse(opts.instagram);
-		if (opts.tiktok) body.tiktok_settings = JSON.parse(opts.tiktok);
-		if (opts.facebook) body.facebook_settings = JSON.parse(opts.facebook);
-		if (opts.youtube) body.youtube_settings = JSON.parse(opts.youtube);
-		if (opts.linkedin) body.linkedin_settings = JSON.parse(opts.linkedin);
+		if (opts.copyMode) body.copy_mode = opts.copyMode;
+		if (opts.singleCopy) body.single_copy = parseJsonOption("single-copy", opts.singleCopy);
+		if (opts.platformCopy) {
+			body.platform_copy = parseJsonOption("platform-copy", opts.platformCopy);
+		}
+		if (opts.instagram) body.instagram_settings = parseJsonOption("instagram", opts.instagram);
+		if (opts.tiktok) body.tiktok_settings = parseJsonOption("tiktok", opts.tiktok);
+		if (opts.facebook) body.facebook_settings = parseJsonOption("facebook", opts.facebook);
+		if (opts.youtube) body.youtube_settings = parseJsonOption("youtube", opts.youtube);
+		if (opts.linkedin) body.linkedin_settings = parseJsonOption("linkedin", opts.linkedin);
 
 		const res = await client.patch(
 			`/brands/${brandId}/content-items/${contentItemId}`,

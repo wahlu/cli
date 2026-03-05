@@ -38,7 +38,9 @@ wahlu post list
 
 # Create a content item
 wahlu post create --name "Monday motivation" \
-  --instagram '{"description":"Rise and grind","post_type":"GRID_POST"}'
+  --copy-mode single \
+  --single-copy '{"caption":"Rise and grind","hashtags":[]}' \
+  --instagram '{"post_type":"GRID_POST"}'
 
 # Schedule it
 wahlu schedule create <content-item-id> \
@@ -92,7 +94,7 @@ Brands represent social media profiles. All content items, media, publish runs, 
 
 ### Content items (`post` command)
 
-Content items are the core content unit. Each content item can have platform-specific settings for Instagram, TikTok, Facebook, YouTube, and LinkedIn.
+Content items are the core content unit. Captions/hashtags are canonical via `copy_mode` + `single_copy`/`platform_copy`, while platform settings control media/post options.
 
 | Command | Description |
 |---------|-------------|
@@ -107,6 +109,9 @@ Content items are the core content unit. Each content item can have platform-spe
 | Option | Description |
 |--------|-------------|
 | `--name <name>` | Content item name (max 500 chars) |
+| `--copy-mode <mode>` | Canonical caption mode: `single` or `per_platform` |
+| `--single-copy <json>` | Canonical shared copy JSON: `{"caption":"...","hashtags":["..."],"title":"..."}` |
+| `--platform-copy <json>` | Canonical per-platform copy JSON map |
 | `--instagram <json>` | Instagram settings as JSON string |
 | `--tiktok <json>` | TikTok settings as JSON string |
 | `--facebook <json>` | Facebook settings as JSON string |
@@ -124,6 +129,9 @@ Content items are the core content unit. Each content item can have platform-spe
 | `label_ids` | string[] | Attached label IDs |
 | `created_by` | string\|null | Creator user ID |
 | `thumbnail_timestamp` | number | Thumbnail timestamp (seconds) |
+| `copy_mode` | string\|null | `single` \| `per_platform` |
+| `single_copy` | object\|null | Canonical shared caption + hashtags |
+| `platform_copy` | object\|null | Canonical per-platform caption map |
 | `instagram_settings` | object\|null | Instagram configuration |
 | `tiktok_settings` | object\|null | TikTok configuration |
 | `facebook_settings` | object\|null | Facebook configuration |
@@ -134,11 +142,14 @@ Content items are the core content unit. Each content item can have platform-spe
 
 #### Platform settings reference
 
+Captions and hashtags come from canonical copy fields:
+- `--copy-mode single --single-copy '{"caption":"...","hashtags":["..."]}'`
+- `--copy-mode per_platform --platform-copy '{"instagram":{"caption":"...","hashtags":[]}}'`
+
 **Instagram** (`--instagram`):
 
 | Field | Type | Values |
 |-------|------|--------|
-| `description` | string | Caption text |
 | `post_type` | string | `GRID_POST` \| `REEL` \| `STORY` |
 | `media_ids` | string[] | Media IDs to attach |
 | `trial_reel` | boolean | Post as trial reel (non-followers first) |
@@ -148,7 +159,6 @@ Content items are the core content unit. Each content item can have platform-spe
 
 | Field | Type | Values |
 |-------|------|--------|
-| `description` | string | Caption text |
 | `post_type` | string | `VIDEO` \| `IMAGE` \| `CAROUSEL` |
 | `media_ids` | string[] | Media IDs to attach |
 | `privacy_level` | string | `PUBLIC_TO_EVERYONE` \| `MUTUAL_FOLLOW_FRIENDS` \| `FOLLOWER_OF_CREATOR` \| `SELF_ONLY` |
@@ -163,7 +173,6 @@ Content items are the core content unit. Each content item can have platform-spe
 
 | Field | Type | Values |
 |-------|------|--------|
-| `description` | string | Caption text |
 | `post_type` | string | `FB_POST` \| `FB_STORY` \| `FB_REEL` \| `FB_TEXT` |
 | `media_ids` | string[] | Media IDs to attach |
 
@@ -182,7 +191,6 @@ Content items are the core content unit. Each content item can have platform-spe
 
 | Field | Type | Values |
 |-------|------|--------|
-| `description` | string | Post text |
 | `post_type` | string | `LI_TEXT` \| `LI_IMAGE` \| `LI_VIDEO` \| `LI_ARTICLE` |
 | `media_ids` | string[] | Media IDs to attach |
 | `visibility` | string | `PUBLIC` \| `CONNECTIONS` |
@@ -194,16 +202,22 @@ Content items are the core content unit. Each content item can have platform-spe
 ```bash
 # Instagram grid post
 wahlu post create --name "Photo post" \
-  --instagram '{"description":"Hello!","post_type":"GRID_POST","media_ids":["mid-123"]}'
+  --copy-mode single \
+  --single-copy '{"caption":"Hello!","hashtags":[]}' \
+  --instagram '{"post_type":"GRID_POST","media_ids":["mid-123"]}'
 
 # Cross-platform video
 wahlu post create --name "Video" \
-  --tiktok '{"description":"Check this out","post_type":"VIDEO","media_ids":["mid-123"]}' \
-  --instagram '{"description":"Check this out","post_type":"REEL","media_ids":["mid-123"]}'
+  --copy-mode per_platform \
+  --platform-copy '{"tiktok":{"caption":"Check this out","hashtags":["video"]},"instagram":{"caption":"Check this out","hashtags":[]}}' \
+  --tiktok '{"post_type":"VIDEO","media_ids":["mid-123"]}' \
+  --instagram '{"post_type":"REEL","media_ids":["mid-123"]}'
 
 # LinkedIn article
 wahlu post create --name "Article share" \
-  --linkedin '{"description":"Read our latest","post_type":"LI_ARTICLE","original_url":"https://example.com","title":"Our Post"}'
+  --copy-mode single \
+  --single-copy '{"caption":"Read our latest","hashtags":[]}' \
+  --linkedin '{"post_type":"LI_ARTICLE","original_url":"https://example.com","title":"Our Post"}'
 ```
 
 ### Publish runs (`schedule` command)
@@ -312,7 +326,9 @@ wahlu media upload ./photo.jpg
 
 # Use the media ID in a content item
 wahlu post create --name "Photo post" \
-  --instagram '{"description":"Nice!","post_type":"GRID_POST","media_ids":["mid-abc123"]}'
+  --copy-mode single \
+  --single-copy '{"caption":"Nice!","hashtags":[]}' \
+  --instagram '{"post_type":"GRID_POST","media_ids":["mid-abc123"]}'
 ```
 
 ### Ideas

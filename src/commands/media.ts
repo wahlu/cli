@@ -38,7 +38,8 @@ Typical workflow:
   1. Upload:     wahlu media upload ./photo.jpg
   2. Get the media ID from the output
   3. Use in a post:  wahlu post create --name "Photo post" \\
-       --instagram '{"description":"Nice!","post_type":"grid_post","media_ids":["<media-id>"]}'
+       --copy-mode single --single-copy '{"caption":"Nice!","hashtags":[]}' \\
+       --instagram '{"post_type":"GRID_POST","media_ids":["<media-id>"]}'
 
 Full documentation: https://wahlu.com/docs`,
 	);
