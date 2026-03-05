@@ -90,9 +90,9 @@ Brands represent social media profiles. All content items, media, publish runs, 
 | `created_at` | string | ISO 8601 timestamp |
 | `updated_at` | string | ISO 8601 timestamp |
 
-### Content items (`post` command alias)
+### Content items (`post` command)
 
-Content items are the core content unit. The `post` command name is kept as a compatibility alias. Each content item can have platform-specific settings for Instagram, TikTok, Facebook, YouTube, and LinkedIn.
+Content items are the core content unit. Each content item can have platform-specific settings for Instagram, TikTok, Facebook, YouTube, and LinkedIn.
 
 | Command | Description |
 |---------|-------------|
@@ -206,9 +206,9 @@ wahlu post create --name "Article share" \
   --linkedin '{"description":"Read our latest","post_type":"LI_ARTICLE","original_url":"https://example.com","title":"Our Post"}'
 ```
 
-### Publish runs (`schedule` command alias)
+### Publish runs (`schedule` command)
 
-Schedule content items for future publishing to specific integrations. The `schedule` command name is kept as a compatibility alias.
+Schedule content items for future publishing to specific integrations.
 
 | Command | Description |
 |---------|-------------|
@@ -407,7 +407,7 @@ Records of content items published to social media platforms.
 |-------|------|-------------|
 | `id` | string | Publication ID |
 | `platform` | string | `instagram` \| `tiktok` \| `facebook` \| `youtube` \| `linkedin` |
-| `post_id` | string | Source content item ID (legacy field name) |
+| `post_id` | string | Source content item ID |
 | `post_name` | string\|null | Content item name |
 | `post_type` | string\|null | Post type |
 | `status` | string | `processing` \| `published` \| `failed` |

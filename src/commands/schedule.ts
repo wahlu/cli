@@ -13,7 +13,7 @@ export const scheduleCommand = new Command("schedule")
 		`
 Publish runs are queued for publishing at a specific date and time to
 one or more connected social media integrations. This command is a
-compatibility alias kept as 'schedule'.
+canonical way to manage publish runs from the CLI.
 
 Subcommands:
   list                      List all publish runs

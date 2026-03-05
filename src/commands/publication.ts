@@ -38,7 +38,7 @@ Returns a paginated list of published content items.
 Response fields:
   id              string       Publication ID
   platform        string       Platform: "instagram" | "tiktok" | "facebook" | "youtube" | "linkedin"
-  post_id         string       Source content item ID (legacy field name)
+  post_id         string       Source content item ID
   post_name       string|null  Content item name
   post_type       string|null  Post type (e.g. "grid_post", "reel", "video")
   media_type      string|null  Media type
