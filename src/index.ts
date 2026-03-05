@@ -10,11 +10,12 @@ import { publicationCommand } from "./commands/publication.js";
 import { queueCommand } from "./commands/queue.js";
 import { scheduleCommand } from "./commands/schedule.js";
 import { CliError } from "./lib/client.js";
+import packageJson from "../package.json";
 
 const program = new Command()
 	.name("wahlu")
 	.description("Wahlu CLI — manage your social media from the terminal")
-	.version("0.1.0")
+	.version(packageJson.version)
 	.option("--brand <id>", "Brand ID (overrides default)")
 	.configureHelp({ sortSubcommands: true })
 	.addHelpText(
