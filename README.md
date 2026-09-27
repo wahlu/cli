@@ -1,501 +1,351 @@
 # Wahlu CLI
 
-Manage your social media from the terminal. Works for humans, AI agents, and CI/CD pipelines.
+Manage your social media from the terminal, or let your AI agent do it. The Wahlu CLI covers every
+operation in the [Wahlu public API](https://wahlu.com/docs): discovery, brand context and labels,
+media import, upload and repair, content, drafts, write-free preflight, and the full schedule
+lifecycle, with schedules held for your review by default. It schedules to Instagram, Facebook,
+TikTok, YouTube and LinkedIn.
+
+Commands below are for version 0.4.0. It needs Node.js 20 or later.
 
 ## Install
 
 ```bash
-npm install -g @wahlu/cli
+npm install --global @wahlu/cli
+wahlu --version
 ```
 
-## Authentication
-
-Generate an API key at [wahlu.com](https://wahlu.com) under Settings > API Keys.
+Or run it without installing:
 
 ```bash
-# Option 1: Save to config
-wahlu auth login wahlu_live_abc123...
-
-# Option 2: Environment variable
-export WAHLU_API_KEY=wahlu_live_abc123...
+npx -y @wahlu/cli auth status
 ```
 
-Authentication priority:
-1. `WAHLU_API_KEY` environment variable (highest)
-2. Saved key in `~/.config/wahlu/config.json`
-
-## Quick start
+Create an API key in the [Wahlu app](https://app.wahlu.com) under **Settings → API Keys**, then:
 
 ```bash
-# List your brands
-wahlu brand list
-
-# Set a default brand so you don't need --brand every time
-wahlu brand switch <brand-id>
-
-# List content items (via post alias)
-wahlu post list
-
-# Create a content item
-wahlu post create --name "Monday motivation" \
-  --copy-mode single \
-  --single-copy '{"caption":"Rise and grind","hashtags":[]}' \
-  --instagram '{"post_type":"GRID_POST"}'
-
-# Schedule it
-wahlu schedule create <content-item-id> \
-  --at 2026-03-15T14:00:00Z \
-  --integrations <integration-id>
-
-# Upload media
-wahlu media upload ./photo.jpg
-
-# List what's been published
-wahlu publication list
+export WAHLU_API_KEY=your-key
+wahlu auth status
 ```
-
-## Commands
-
-### Auth
-
-| Command | Description |
-|---------|-------------|
-| `wahlu auth login <key>` | Save API key to `~/.config/wahlu/config.json` |
-| `wahlu auth logout` | Remove saved API key |
-| `wahlu auth status` | Show current auth method, masked key, and config |
-
-### Brands
-
-Brands represent social media profiles. All content items, media, publish runs, and queues belong to a brand.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu brand list` | List all brands |
-| `wahlu brand get <id>` | Get full brand details |
-| `wahlu brand switch <id>` | Set default brand for all commands |
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Brand ID |
-| `name` | string | Brand name |
-| `description` | string\|null | Brand description |
-| `logo_url` | string\|null | Logo URL |
-| `timezone` | string\|null | IANA timezone (e.g. `Australia/Sydney`) |
-| `website` | string\|null | Brand website URL |
-| `business_category` | string\|null | Business category |
-| `brand_kit` | object\|null | Brand kit (fonts, colours, voice) |
-| `content_preferences` | object\|null | CTA, logo frequency settings |
-| `image_posting` | object\|null | Image posting preferences |
-| `video_posting` | object\|null | Video posting preferences |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-### Content items (`post` command)
-
-Content items are the core content unit. Captions/hashtags are canonical via `copy_mode` + `single_copy`/`platform_copy`, while platform settings control media/post options.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu post list` | List content items (paginated) |
-| `wahlu post get <id>` | Get full content item details |
-| `wahlu post create [options]` | Create a new content item |
-| `wahlu post update <id> [options]` | Update a content item (partial update) |
-| `wahlu post delete <id>` | Permanently delete a content item |
-
-**Create/update options:**
-
-| Option | Description |
-|--------|-------------|
-| `--name <name>` | Content item name (max 500 chars) |
-| `--copy-mode <mode>` | Canonical caption mode: `single` or `per_platform` |
-| `--single-copy <json>` | Canonical shared copy JSON: `{"caption":"...","hashtags":["..."],"title":"..."}` |
-| `--platform-copy <json>` | Canonical per-platform copy JSON map |
-| `--instagram <json>` | Instagram settings as JSON string |
-| `--tiktok <json>` | TikTok settings as JSON string |
-| `--facebook <json>` | Facebook settings as JSON string |
-| `--youtube <json>` | YouTube settings as JSON string |
-| `--linkedin <json>` | LinkedIn settings as JSON string |
-| `--labels <ids...>` | Label IDs to attach (max 50) |
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Content item ID |
-| `name` | string\|null | Content item name |
-| `brand_id` | string | Brand ID |
-| `label_ids` | string[] | Attached label IDs |
-| `created_by` | string\|null | Creator user ID |
-| `thumbnail_timestamp` | number | Thumbnail timestamp (seconds) |
-| `copy_mode` | string\|null | `single` \| `per_platform` |
-| `single_copy` | object\|null | Canonical shared caption + hashtags |
-| `platform_copy` | object\|null | Canonical per-platform caption map |
-| `instagram_settings` | object\|null | Instagram configuration |
-| `tiktok_settings` | object\|null | TikTok configuration |
-| `facebook_settings` | object\|null | Facebook configuration |
-| `youtube_settings` | object\|null | YouTube configuration |
-| `linkedin_settings` | object\|null | LinkedIn configuration |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-#### Platform settings reference
-
-Captions and hashtags come from canonical copy fields:
-- `--copy-mode single --single-copy '{"caption":"...","hashtags":["..."]}'`
-- `--copy-mode per_platform --platform-copy '{"instagram":{"caption":"...","hashtags":[]}}'`
-
-**Instagram** (`--instagram`):
-
-| Field | Type | Values |
-|-------|------|--------|
-| `post_type` | string | `GRID_POST` \| `REEL` \| `STORY` |
-| `media_ids` | string[] | Media IDs to attach |
-| `trial_reel` | boolean | Post as trial reel (non-followers first) |
-| `graduation_strategy` | string | `MANUAL` \| `SS_PERFORMANCE` |
-
-**TikTok** (`--tiktok`):
-
-| Field | Type | Values |
-|-------|------|--------|
-| `post_type` | string | `VIDEO` \| `IMAGE` \| `CAROUSEL` |
-| `media_ids` | string[] | Media IDs to attach |
-| `privacy_level` | string | `PUBLIC_TO_EVERYONE` \| `MUTUAL_FOLLOW_FRIENDS` \| `FOLLOWER_OF_CREATOR` \| `SELF_ONLY` |
-| `allow_comment` | boolean | Allow comments (default: true) |
-| `allow_duet` | boolean | Allow duets (default: true, video only) |
-| `allow_stitch` | boolean | Allow stitches (default: true, video only) |
-| `auto_add_music` | boolean | Auto-add music (photo/carousel only) |
-| `is_aigc` | boolean | Disclose as AI-generated content |
-| `is_commercial_content` | boolean | Mark as commercial/branded content |
-
-**Facebook** (`--facebook`):
-
-| Field | Type | Values |
-|-------|------|--------|
-| `post_type` | string | `FB_POST` \| `FB_STORY` \| `FB_REEL` \| `FB_TEXT` |
-| `media_ids` | string[] | Media IDs to attach |
-
-**YouTube** (`--youtube`):
-
-| Field | Type | Values |
-|-------|------|--------|
-| `title` | string | Video title |
-| `description` | string | Video description |
-| `post_type` | string | `YT_SHORT` \| `YT_VIDEO` |
-| `media_ids` | string[] | Media IDs to attach |
-| `privacy_level` | string | `PUBLIC` \| `UNLISTED` \| `PRIVATE` |
-| `notify_subscribers` | boolean | Notify subscribers on publish |
-
-**LinkedIn** (`--linkedin`):
-
-| Field | Type | Values |
-|-------|------|--------|
-| `post_type` | string | `LI_TEXT` \| `LI_IMAGE` \| `LI_VIDEO` \| `LI_ARTICLE` |
-| `media_ids` | string[] | Media IDs to attach |
-| `visibility` | string | `PUBLIC` \| `CONNECTIONS` |
-| `title` | string | Article title (`LI_ARTICLE` only) |
-| `original_url` | string | Article URL (`LI_ARTICLE` only) |
-
-**Examples:**
-
-```bash
-# Instagram grid post
-wahlu post create --name "Photo post" \
-  --copy-mode single \
-  --single-copy '{"caption":"Hello!","hashtags":[]}' \
-  --instagram '{"post_type":"GRID_POST","media_ids":["mid-123"]}'
-
-# Cross-platform video
-wahlu post create --name "Video" \
-  --copy-mode per_platform \
-  --platform-copy '{"tiktok":{"caption":"Check this out","hashtags":["video"]},"instagram":{"caption":"Check this out","hashtags":[]}}' \
-  --tiktok '{"post_type":"VIDEO","media_ids":["mid-123"]}' \
-  --instagram '{"post_type":"REEL","media_ids":["mid-123"]}'
-
-# LinkedIn article
-wahlu post create --name "Article share" \
-  --copy-mode single \
-  --single-copy '{"caption":"Read our latest","hashtags":[]}' \
-  --linkedin '{"post_type":"LI_ARTICLE","original_url":"https://example.com","title":"Our Post"}'
-```
-
-### Publish runs (`schedule` command)
-
-Schedule content items for future publishing to specific integrations.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu schedule list` | List publish runs (paginated) |
-| `wahlu schedule create <content-item-id>` | Schedule a content item |
-| `wahlu schedule update <publish-run-id>` | Update a publish run (reschedule/retarget) |
-| `wahlu schedule delete <id>` | Remove a publish run (does not delete the content item) |
-
-**Create options:**
-
-| Option | Required | Description |
-|--------|----------|-------------|
-| `--at <datetime>` | Yes | ISO 8601 datetime (e.g. `2026-03-15T14:00:00Z`) |
-| `--integrations <ids...>` | Yes | Integration IDs to publish to (max 20) |
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Publish run ID |
-| `content_item_id` | string | Referenced content item ID |
-| `scheduled_at` | string | ISO 8601 datetime |
-| `integration_ids` | string[] | Integration IDs |
-| `status` | string | e.g. `ready_for_processing`, `published`, `failed` |
-| `approval_status` | string\|null | Approval status |
-| `source` | string\|null | `api` for API-created entries |
-| `failure_reason` | string\|null | Failure reason |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-**Example:**
-
-```bash
-wahlu schedule create content-abc \
-  --at 2026-03-15T14:00:00Z \
-  --integrations int-123 int-456
-```
-
-### Queues
-
-Queues define recurring time slots for automatic publishing.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu queue list` | List all queues |
-| `wahlu queue add <queue-id> <content-item-id>` | Append a content item to a queue |
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Queue ID |
-| `name` | string | Queue name |
-| `active` | boolean | Whether the queue is active |
-| `mode` | string | Queue mode |
-| `times_of_day` | string[] | Scheduled times (e.g. `["09:00","17:00"]`) |
-| `timezone` | string\|null | IANA timezone |
-| `next_run_at` | string\|null | Next scheduled publishing time |
-| `loop` | boolean | Whether to loop through posts |
-| `content_item_ids` | string[] | Ordered content item IDs in the queue |
-| `integration_ids` | string[] | Integration IDs |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-### Media
-
-Upload images and videos to your media library.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu media list` | List media files (paginated) |
-| `wahlu media upload <file>` | Upload a local file |
-| `wahlu media delete <id>` | Permanently delete a media file |
-
-**Supported formats:** `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.mp4`, `.mov`, `.webm`
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Media ID (use in `media_ids` arrays) |
-| `file_name` | string | Original filename |
-| `content_type` | string | MIME type (e.g. `image/jpeg`) |
-| `size` | number | File size in bytes |
-| `duration` | number\|null | Duration in seconds (video only) |
-| `status` | string | `ready_for_processing` \| `processing` \| `completed` \| `failed` |
-| `download_url` | string\|null | Signed download URL |
-| `thumbnail_large_url` | string\|null | Large thumbnail |
-| `thumbnail_small_url` | string\|null | Small thumbnail |
-| `source` | string\|null | `upload` \| `generated` \| `stock` \| `scan` |
-| `description` | string\|null | Media description |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-**Upload workflow:**
-
-```bash
-# Upload returns a media ID
-wahlu media upload ./photo.jpg
-# Uploaded photo.jpg — media ID: mid-abc123
-
-# Use the media ID in a content item
-wahlu post create --name "Photo post" \
-  --copy-mode single \
-  --single-copy '{"caption":"Nice!","hashtags":[]}' \
-  --instagram '{"post_type":"GRID_POST","media_ids":["mid-abc123"]}'
-```
-
-### Ideas
-
-Save content ideas for later development into full content items.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu idea list` | List ideas (paginated) |
-| `wahlu idea create <name>` | Save a new idea |
-| `wahlu idea delete <id>` | Delete an idea |
-
-**Create options:**
-
-| Option | Description |
-|--------|-------------|
-| `--description <text>` | Detailed description (max 10000 chars) |
-| `--type <type>` | Idea type (max 50 chars) |
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Idea ID |
-| `name` | string\|null | Idea name/title |
-| `description` | string\|null | Detailed description |
-| `type` | string\|null | Idea type |
-| `status` | string | Status |
-| `labels` | string[] | Text labels |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-### Labels
-
-Labels categorise and organise content items and media.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu label list` | List all labels |
-| `wahlu label create <name>` | Create a label |
-| `wahlu label delete <id>` | Delete a label |
-
-**Create options:**
-
-| Option | Description |
-|--------|-------------|
-| `--color <hex>` | Colour hex code (e.g. `#ff5500`) |
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Label ID |
-| `name` | string | Label name |
-| `color` | string\|null | Colour hex code |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-### Integrations (read-only)
-
-Connected social media accounts. You need integration IDs when scheduling content items.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu integration list` | List connected integrations |
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Integration ID (use in `--integrations` when scheduling) |
-| `platform` | string | `instagram` \| `tiktok` \| `facebook` \| `youtube` \| `linkedin` |
-| `status` | string | Connection status |
-| `display_name` | string\|null | Display name on the platform |
-| `username` | string\|null | Platform username/handle |
-| `avatar_url` | string\|null | Profile avatar URL |
-| `permissions` | object\|null | Granted permissions |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-### Publications (read-only)
-
-Records of content items published to social media platforms.
-
-| Command | Description |
-|---------|-------------|
-| `wahlu publication list` | List published content items (paginated) |
-
-**Response fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Publication ID |
-| `platform` | string | `instagram` \| `tiktok` \| `facebook` \| `youtube` \| `linkedin` |
-| `post_id` | string | Source content item ID |
-| `post_name` | string\|null | Content item name |
-| `post_type` | string\|null | Post type |
-| `status` | string | `processing` \| `published` \| `failed` |
-| `source` | string\|null | `calendar` (from schedule) or `queue` (from queue) |
-| `failure_reason` | string\|null | Failure reason |
-| `integration_id` | string | Integration used |
-| `publish_id` | string\|null | Platform content ID |
-| `published_at` | string | When published (ISO 8601) |
-| `created_at` | string | ISO 8601 timestamp |
-| `updated_at` | string | ISO 8601 timestamp |
-
-## Global options
-
-| Flag | Description |
-|------|-------------|
-| `--brand <id>` | Use a specific brand (overrides default) |
-| `--json` | Output as JSON (available on all list/get/create/update commands) |
-| `--help` | Show help for any command |
-| `--version` | Show CLI version |
-
-## Pagination
-
-All `list` commands support pagination:
-
-| Flag | Default | Max | Description |
-|------|---------|-----|-------------|
-| `--page <n>` | 1 | - | Page number |
-| `--limit <n>` | 50 | 100 | Items per page |
-
-## Configuration
-
-Config is stored at `~/.config/wahlu/config.json`:
-
-```json
-{
-  "api_key": "wahlu_live_...",
-  "api_url": "https://api.wahlu.com",
-  "default_brand_id": "abc123"
-}
-```
-
-Environment variables take priority over config file:
-
-| Variable | Description |
-|----------|-------------|
-| `WAHLU_API_KEY` | API key |
-| `WAHLU_API_URL` | API base URL (default: `https://api.wahlu.com`) |
-| `WAHLU_BRAND_ID` | Default brand ID |
 
 ## For AI agents
 
-Every command supports `--json` for structured output:
+- **MCP:** most agents are better served by the Wahlu MCP server. See
+  [wahlu.com/mcp](https://wahlu.com/mcp) for Claude, ChatGPT, Codex, Cursor, Gemini CLI and more.
+- **Examples:** connect guides, example prompts, a Claude plugin and the OpenClaw skill live in
+  [wahlu/agent-examples](https://github.com/wahlu/agent-examples).
+- Agents should use `--json` and pass `--yes` only when you have approved a write.
 
-```bash
-# Get content item IDs
-wahlu post list --json | jq '.[].id'
+The executable accepts API keys only through `WAHLU_API_KEY`. There is intentionally no
+`--api-key` option, which avoids putting credentials into shell history or process listings.
+Use a least-privilege, brand-restricted key where possible and never commit it to a project file.
 
-# Get integration IDs for scheduling
-wahlu integration list --json | jq '.[] | {id, platform, username}'
+## Command inventory
 
-# Find failed publications
-wahlu publication list --json | jq '.[] | select(.status == "failed")'
+Every command maps to exactly one operation of the `@wahlu/api-client` SDK. `wahlu <group> --help`
+and `wahlu <group> <command> --help` list every option.
 
-# Create and capture the ID
-CONTENT_ITEM_ID=$(wahlu post create --name "Auto post" --json | jq -r '.id')
-wahlu schedule create $CONTENT_ITEM_ID --at 2026-03-15T14:00:00Z --integrations int-123
+```text
+wahlu auth status
+wahlu targets list --brand BRAND_ID
+wahlu targets options --brand BRAND_ID --integration INTEGRATION_ID
+wahlu targets refresh-options --brand BRAND_ID --integration INTEGRATION_ID [--yes]
+wahlu platforms capabilities
+wahlu brands context --brand BRAND_ID
+wahlu brands labels --brand BRAND_ID
+wahlu media import \
+  --brand BRAND_ID \
+  --url https://assets.example.com/campaign/hero.jpg \
+  --idempotency-key KEY
+wahlu media upload \
+  --brand BRAND_ID \
+  --file ./hero.jpg \
+  --idempotency-key KEY
+wahlu media list --brand BRAND_ID [--limit 12]
+wahlu media get --brand BRAND_ID --media MEDIA_ID
+wahlu media repair \
+  --brand BRAND_ID \
+  --media MEDIA_ID \
+  --integration INTEGRATION_ID \
+  --platform instagram \
+  --post-type GRID_POST \
+  --mode centre_crop \
+  --repair-option REPAIR_OPTION_ID \
+  --policy-version 2026-08-05.1 \
+  --idempotency-key KEY
+wahlu content list --brand BRAND_ID [--limit 20] [--cursor CURSOR] [--order desc]
+wahlu content get --brand BRAND_ID --content-item CONTENT_ITEM_ID
+wahlu drafts create \
+  --brand BRAND_ID \
+  --input-file ./draft.json \
+  --idempotency-key KEY
+wahlu drafts tiktok-privacy \
+  --brand BRAND_ID \
+  --content-item CONTENT_ITEM_ID \
+  --integration TIKTOK_INTEGRATION_ID \
+  --privacy-level SELF_ONLY [--yes]
+wahlu drafts preflight \
+  --brand BRAND_ID \
+  --content-item CONTENT_ITEM_ID \
+  --integration INTEGRATION_ID \
+  [--scheduled-at 2026-10-20T09:00:00Z]
+wahlu schedules list \
+  --brand BRAND_ID \
+  --from 2026-10-01T00:00:00Z \
+  --to 2026-11-01T00:00:00Z
+wahlu schedules create \
+  --brand BRAND_ID \
+  --content-item CONTENT_ITEM_ID \
+  --scheduled-at 2026-10-20T09:00:00Z \
+  --integration INTEGRATION_ID \
+  --approval-status pending_review \
+  --idempotency-key KEY
+wahlu schedules get --brand BRAND_ID --schedule SCHEDULE_ID
+wahlu schedules receipt --brand BRAND_ID --schedule SCHEDULE_ID
+wahlu schedules cleanup \
+  --brand BRAND_ID \
+  --schedule SCHEDULE_ID \
+  --input-file ./cleanup-authority.json \
+  --idempotency-key KEY [--yes]
+wahlu schedules reschedule \
+  --brand BRAND_ID \
+  --schedule SCHEDULE_ID \
+  --scheduled-at 2026-10-21T09:00:00Z \
+  --confirm-schedule SCHEDULE_ID \
+  --idempotency-key KEY
+wahlu schedules cancel \
+  --brand BRAND_ID \
+  --schedule SCHEDULE_ID \
+  --confirm-schedule SCHEDULE_ID \
+  --idempotency-key KEY [--yes]
 ```
 
-## Documentation
+This is all 24 public API operations.
 
-Full documentation: [wahlu.com/docs](https://wahlu.com/docs)
+### Discovery and brand context
 
-## License
+- `auth status` shows the key, workspace, scopes and the brands it can reach. Take `BRAND_ID` from
+  here.
+- `brands context` returns what an agent needs before writing content: the brand's description,
+  website, category and timezone, brand kit colours, fonts and logos, the owner's custom AI
+  instructions, the Markdown brand profile and content strategy, the default call to action and
+  Link in bio status. Human output summarises it; `--json` returns the full text.
+- `brands labels` lists label IDs and names for a draft's `label_ids`.
+- `targets list` reports each connected account and whether it can be scheduled. `targets options`
+  reads a TikTok target's creator privacy levels and constraints; `targets refresh-options` asks
+  TikTok again and may update stored credentials, so it needs confirmation.
 
-MIT
+### Media
+
+- `media import` fetches a remote URL. `media upload` reads a local image or video, computes its
+  size and SHA-256, opens an upload session and sends the exact bytes to the upload address Wahlu
+  returns. The content type comes from the extension (`.jpg`, `.png`, `.gif`, `.webp`, `.mp4`,
+  `.m4v`, `.mov`, `.webm`) unless you pass `--content-type`. Images can be up to 25 MiB and videos
+  up to 500 MiB. If the upload is interrupted, re-run it with the same idempotency key.
+- `media list` returns the most recent items (up to 24). `media get` reads one item's processing
+  status once and does not poll.
+- `media repair` creates a derivative from one repair option that preflight offered.
+
+### Content and drafts
+
+`content list` and `content get` read existing content items; `drafts` creates and changes them.
+
+`drafts create` accepts the complete strict snake_case public draft body from exactly one source:
+
+- `--input-file ./draft.json` reads a bounded UTF-8 file and keeps draft content out of the process
+  argument list;
+- `--input-json - < draft.json` reads bounded UTF-8 JSON from stdin; or
+- `--input-json '{...}'` accepts inline JSON for convenience, but exposes that content to shell
+  history and process inspection.
+
+Supplying both input options, or neither, is a usage error. `--input-file -` is rejected so stdin
+has one unambiguous spelling. Every JSON input is limited to 1 MiB; invalid UTF-8, unreadable files,
+oversized input and invalid JSON fail before the API client is constructed. The idempotency key
+must be supplied separately so retries have one explicit caller-owned source. Creating a draft never
+schedules or publishes it.
+
+`drafts tiktok-privacy` sets one TikTok target's privacy level on a draft, using a value from
+`targets options`. `drafts preflight` (also available as `drafts validate`) is write-free and
+reports blockers, warnings, repairs and next actions. Repeat `--integration` to evaluate several
+intended accounts together; omit `--scheduled-at` when you want the API to report schedule-time
+readiness as a repairable blocker.
+
+### Schedules
+
+`schedules create` requires the approval decision to be explicit. `pending_review` creates a held
+Schedule and does not publish. `approved` may lead to publication and requires the API key to have
+`publish:execute` permission. `schedules list` needs a date range of at most 93 days and pages with
+`--cursor`. `schedules get` and `schedules receipt` read once and do not poll.
+
+`schedules reschedule` and `schedules cancel` make you repeat the Schedule ID in
+`--confirm-schedule`, as the API requires. `schedules cleanup` removes the provider posts of a
+test-marked run: pass the receipt's `cleanup_authority` object, for example
+
+```bash
+wahlu schedules receipt --brand "$BRAND_ID" --schedule "$SCHEDULE_ID" --json \
+  | jq '.data.cleanup_authority' > cleanup-authority.json
+```
+
+## Held Schedule golden workflow
+
+This executable Bash example uses JSON output plus `jq` to carry every returned identifier into the
+next command. It imports one Instagram grid image, reads media readiness once, and stops if
+processing is not complete; it does not create a polling loop.
+
+```bash
+set -euo pipefail
+
+CONTEXT_JSON=$(wahlu auth status --json)
+BRAND_ID=$(jq -er '.data.brands[0].id' <<<"$CONTEXT_JSON")
+
+TARGETS_JSON=$(wahlu targets list --brand "$BRAND_ID" --json)
+INTEGRATION_ID=$(jq -er \
+  '[.data.targets[] | select(.platform == "instagram" and .schedulable and .integration_id != null) | .integration_id][0]' \
+  <<<"$TARGETS_JSON")
+
+MEDIA_IMPORT_JSON=$(wahlu media import \
+  --brand "$BRAND_ID" \
+  --url "https://assets.example.com/campaign/instagram-grid.jpg" \
+  --filename "instagram-grid.jpg" \
+  --idempotency-key "media-instagram-grid-v1" \
+  --json)
+MEDIA_ID=$(jq -er '.data.id' <<<"$MEDIA_IMPORT_JSON")
+
+MEDIA_JSON=$(wahlu media get --brand "$BRAND_ID" --media "$MEDIA_ID" --json)
+if [[ $(jq -r '.data.status' <<<"$MEDIA_JSON") != "completed" ]]; then
+  echo "Media $MEDIA_ID is not ready; run this workflow again later with the same idempotency keys."
+  exit 1
+fi
+
+DRAFT_INPUT=$(jq -cn \
+  --arg integration_id "$INTEGRATION_ID" \
+  --arg media_id "$MEDIA_ID" \
+  '{
+    name: "Held Instagram launch",
+    copy_mode: "single",
+    single_copy: {caption: "Our launch is ready for review.", hashtags: ["launch"]},
+    instagram_settings: {
+      media_ids: [$media_id],
+      post_type: "GRID_POST",
+      collaborators: []
+    },
+    intended_integration_ids: [$integration_id]
+  }')
+DRAFT_JSON=$(wahlu drafts create \
+  --brand "$BRAND_ID" \
+  --input-json - \
+  --idempotency-key "draft-instagram-launch-v1" \
+  --json <<<"$DRAFT_INPUT")
+CONTENT_ITEM_ID=$(jq -er '.data.content_item.id' <<<"$DRAFT_JSON")
+
+SCHEDULED_AT="2026-11-02T10:00:00+11:00"
+PREFLIGHT_JSON=$(wahlu drafts preflight \
+  --brand "$BRAND_ID" \
+  --content-item "$CONTENT_ITEM_ID" \
+  --integration "$INTEGRATION_ID" \
+  --scheduled-at "$SCHEDULED_AT" \
+  --approval-status pending_review \
+  --json)
+jq -e '.data.can_schedule == true' <<<"$PREFLIGHT_JSON" >/dev/null
+
+SCHEDULE_JSON=$(wahlu schedules create \
+  --brand "$BRAND_ID" \
+  --content-item "$CONTENT_ITEM_ID" \
+  --integration "$INTEGRATION_ID" \
+  --scheduled-at "$SCHEDULED_AT" \
+  --approval-status pending_review \
+  --idempotency-key "schedule-instagram-launch-v1" \
+  --json)
+SCHEDULE_ID=$(jq -er '.data.schedule.id' <<<"$SCHEDULE_JSON")
+
+wahlu schedules get \
+  --brand "$BRAND_ID" \
+  --schedule "$SCHEDULE_ID" \
+  --json
+```
+
+The final Schedule remains held for review with no publication effect. The variables
+`BRAND_ID`, `INTEGRATION_ID`, `MEDIA_ID`, `CONTENT_ITEM_ID`, and `SCHEDULE_ID` are all sourced from
+canonical command output rather than guessed.
+
+## Global options
+
+The following work consistently across commands and may appear before or after the command:
+
+- `--json` emits one stable JSON success or failure document.
+- `--timeout <milliseconds>` sets a positive finite logical-request timeout.
+- `--base-url <url>` overrides the Wahlu API origin for staging or local development.
+- `--media-base-url <url>` overrides the branded-media origin used to validate media responses.
+
+`platforms capabilities` returns the canonical public post types, media and text rules, settings
+fields, implementation status, and agent rules. JSON mode returns the complete typed registry;
+human mode gives a compact publishing/scheduling overview.
+
+Successful JSON preserves the API's canonical metadata exactly and keeps transport facts separate:
+
+```json
+{
+	"ok": true,
+	"command": "auth.status",
+	"data": {},
+	"meta": { "request_id": "request-id" },
+	"transport": { "status": 200, "idempotency_replayed": false }
+}
+```
+
+The CLI does not reconstruct pagination or request identity from deprecated aliases.
+
+Production defaults remain `https://api.wahlu.com` and `https://media.wahlu.com`. Plain HTTP custom
+origins are rejected by the shared client except for explicit loopback development addresses.
+
+## Mutation safety
+
+- Every write needs a caller-supplied idempotency key, an explicit confirmation, or both. The CLI
+  never invents a key.
+- Confirmation follows the API contract: a write with no idempotency key
+  (`targets refresh-options`, `drafts tiktok-privacy`) or a high-risk write (`schedules cancel`,
+  `schedules cleanup`) asks for a yes in an interactive terminal. Scripts and agents pass `--yes`.
+  Without either, the command stops with `CONFIRMATION_REQUIRED` and makes no API call.
+- Draft preflight is write-free. It cannot create a schedule, enqueue work or publish content.
+- A `pending_review` Schedule is held and cannot publish. An `approved` Schedule may lead to an
+  external publication and requires explicit `publish:execute` permission.
+- JSON output for writes includes a `safety` object that states the effect, whether a Schedule was
+  created and whether anything can publish.
+- `--dry-run` deliberately returns a non-zero `DRY_RUN_UNSUPPORTED` result without calling the API.
+  Wahlu does not yet expose a server-backed preview contract, so the CLI will not fake success.
+- API failures stay failures and map to stable exit codes.
+
+| Exit code | Meaning                                                            |
+| --------: | ------------------------------------------------------------------ |
+|         0 | Success                                                            |
+|         2 | Usage, configuration, unsupported dry-run, or confirmation failure |
+|         3 | Authentication                                                     |
+|         4 | Permission                                                         |
+|         5 | Not found                                                          |
+|         6 | Validation                                                         |
+|         7 | Conflict                                                           |
+|         8 | Rate limit                                                         |
+|         9 | Timeout or cancellation                                            |
+|        10 | Network, redirect, oversized, or malformed response                |
+|        11 | Server or unknown failure                                          |
+
+## Not in the CLI
+
+The CLI adds nothing the public API does not offer. There is no generic request command, no bulk
+command and no polling loop. Editing or deleting drafts, queues, history and Link in bio are not in
+the public API yet.
+
+## About this repository
+
+npm releases from 0.2 onwards are built from Wahlu's main codebase, so the source in this
+repository is the original 0.1 CLI, kept for reference. Report problems or ask questions at
+[hello@wahlu.com](mailto:hello@wahlu.com).
+
+## Links
+
+[Website](https://wahlu.com) · [MCP](https://wahlu.com/mcp) · [API docs](https://wahlu.com/docs) ·
+[Agent examples](https://github.com/wahlu/agent-examples) · [npm](https://www.npmjs.com/package/@wahlu/cli)
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
